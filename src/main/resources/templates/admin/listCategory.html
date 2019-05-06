@@ -8,6 +8,7 @@
     $(function(){/*这个是jquery的代码，表示当整个html加载好了之后执行*/
         var data4Vue = {//vue用到的数据， uri表示访问哪个地址去获取数据，这里的值是 categories，和 CategoryController.java 相呼应
             uri:'categories',
+            pagination:{},
             beans: []
         };
 
@@ -16,14 +17,21 @@
             el: '#workingArea',
             data: data4Vue,
             mounted:function(){ //mounted　表示这个 Vue 对象加载成功了
-                this.list();
+                this.list(0);
             },
             methods: {//list 函数使用 data4Vue里的 uri作为地址，然后调用 axios.js 这个 ajax库，进行异步调用。 调用成功之后，把服务端返回的数据，保存在 vue.beans 上。
-                list:function(){
-                    var url =  this.uri;
+                list:function(start){
+                    var url =  this.uri+ "?start="+start;
                     axios.get(url).then(function(response) {
-                        vue.beans = response.data;
+                        vue.pagination = response.data
+                        vue.beans = response.data.content;
                     });
+                },
+                jump:function (page) {
+                    jump(page,vue)
+                },
+                jumpByNumber:function (start) {
+                  jumpByNumber(start,vue)
                 }
             }
         });
@@ -76,6 +84,7 @@
             </tbody>
         </table>
     </div>
+    <div th:replace="/commons/adminPage::html" ></div>
 </div>
 <div th:replace="/commons/adminFooter::html" ></div>
 </body>
