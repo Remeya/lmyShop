@@ -9,7 +9,9 @@
         var data4Vue = {//vue用到的数据， uri表示访问哪个地址去获取数据，这里的值是 categories，和 CategoryController.java 相呼应
             uri:'categories',
             pagination:{},
-            beans: []
+            beans: [],
+            bean:{id:0,name:''},
+            file:null
         };
 
         //ViewModel
@@ -32,6 +34,43 @@
                 },
                 jumpByNumber:function (start) {
                   jumpByNumber(start,vue)
+                },
+                getFile:function (event) {
+                    this.file=event.target.files[0];
+                },
+                add:function () {
+                    if (checkEmpty(this.bean.name,"分类名称"))
+                        return;
+                    if (checkEmpty(this.file,"分类图片"))
+                        return;
+                    var url = this.uri;
+                    //axios.js 上传文件要用formData这种方式
+                    var formData = new FormData();
+                    formData.append("image",this.file);
+                    formData.append("name",this.bean.name);
+                    axios.post(url,formData).then(function (response) {
+                       vue.list(0);
+                       vue.beans = {id:0,name:''};
+                        $("#categoryPic").val('');
+                        vue.file = null;
+                    });
+                },
+                /***1. 函数名用的 deleteBean, 而不是 delete, 因为 delete 是保留字，妈蛋。。。不能用，这个调试我好久
+                2. 首先进行是否删除确认 checkDeleteLink(). 这个函数在 adminHeader.html 中定义
+                3. 组织url, 删除的规范是 /categoreis/123. 要这样写
+                4. 通过axios 提交 delete 请求
+                5. 根据 REST 规范，当删除数据后，应该返回一个空字符串，所以会判断 0!=response.data.length
+                6. 当是空字符串的时候，调用 vue.list(0) 查询第一页。***/
+                deleteBean:function (id) {
+                    if (!checkDeleteLink())
+                        return;
+                    var url = this.uri+"/"+id;
+                    axios.delete(url).then(function (response) {
+                        if (0!=response.data.length)
+                            alert(response.data);
+                        else
+                            vue.list(0);
+                    });
                 }
             }
         });
@@ -85,6 +124,28 @@
         </table>
     </div>
     <div th:replace="/commons/adminPage::html" ></div>
+    <div class="panel panel-warning addDiv">
+        <div class="panel-heading">新增分类</div>
+        <div class="panel-body">
+            <table class="addTable">
+                <tr>
+                    <td>分类名称</td>
+                    <td><input  @keyup.enter="add" v-model.trim="bean.name" type="text" class="form-control"></td>
+                </tr>
+                <tr>
+                    <td>分类图片</td>
+                    <td>
+                        <input id="categoryPic" accept="image/*" type="file" name="image" @change="getFile($event)" />
+                    </td>
+                </tr>
+                <tr class="submitTR">
+                    <td colspan="2" align="center">
+                        <a href="#nowhere"  @click="add" class="btn btn-success">提交</a>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
 </div>
 <div th:replace="/commons/adminFooter::html" ></div>
 </body>
